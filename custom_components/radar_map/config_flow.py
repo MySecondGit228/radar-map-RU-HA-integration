@@ -11,6 +11,9 @@ from homeassistant.config_entries import ConfigFlowResult, OptionsFlowWithReload
 from homeassistant.core import callback
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from homeassistant.helpers.selector import (
+    NumberSelector,
+    NumberSelectorConfig,
+    NumberSelectorMode,
     SelectOptionDict,
     SelectSelector,
     SelectSelectorConfig,
@@ -28,8 +31,12 @@ from .const import (
     CONF_DISTRICT_REGIONS,
     CONF_DISTRICTS,
     CONF_OBJECTS,
+    CONF_POLL_INTERVAL,
     CONF_REGIONS,
+    DEFAULT_POLL_INTERVAL,
     DOMAIN,
+    MAX_POLL_INTERVAL,
+    MIN_POLL_INTERVAL,
     NAME,
 )
 from .models import RadarMapCatalog, RadarMapObject
@@ -47,7 +54,7 @@ def _selector(options: Sequence[SelectOptionDict]) -> SelectSelector:
 
 def _base_schema(
     catalog: RadarMapCatalog,
-    defaults: Mapping[str, Sequence[str]],
+    defaults: Mapping[str, Any],
 ) -> vol.Schema:
     region_options = [
         SelectOptionDict(value=item.object_id, label=item.name)
@@ -79,6 +86,18 @@ def _base_schema(
                 CONF_DISTRICT_REGIONS,
                 default=list(defaults.get(CONF_DISTRICT_REGIONS, [])),
             ): _selector(district_region_options),
+            vol.Required(
+                CONF_POLL_INTERVAL,
+                default=float(defaults.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)),
+            ): NumberSelector(
+                NumberSelectorConfig(
+                    min=MIN_POLL_INTERVAL,
+                    max=MAX_POLL_INTERVAL,
+                    step=5,
+                    mode=NumberSelectorMode.SLIDER,
+                    unit_of_measurement="s",
+                )
+            ),
         }
     )
 
@@ -106,7 +125,7 @@ class _RadarMapFlowMixin:
     hass: Any
     _catalog: RadarMapCatalog | None = None
     _districts: dict[str, RadarMapObject]
-    _pending: dict[str, list[str]]
+    _pending: dict[str, Any]
 
     def _init_flow_state(self) -> None:
         self._catalog = None
@@ -144,6 +163,7 @@ class _RadarMapFlowMixin:
             CONF_CITIES: city_ids,
             CONF_DISTRICT_REGIONS: self._pending.get(CONF_DISTRICT_REGIONS, []),
             CONF_DISTRICTS: list(district_ids),
+            CONF_POLL_INTERVAL: float(self._pending.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)),
             CONF_OBJECTS: [item.as_selection_dict() for item in selected],
         }
 
@@ -184,6 +204,9 @@ class RadarMapConfigFlow(_RadarMapFlowMixin, config_entries.ConfigFlow, domain=D
                 CONF_REGIONS: list(user_input.get(CONF_REGIONS, [])),
                 CONF_CITIES: list(user_input.get(CONF_CITIES, [])),
                 CONF_DISTRICT_REGIONS: list(user_input.get(CONF_DISTRICT_REGIONS, [])),
+                CONF_POLL_INTERVAL: float(
+                    user_input.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)
+                ),
             }
             if self._pending[CONF_DISTRICT_REGIONS]:
                 return await self.async_step_districts()
@@ -267,6 +290,9 @@ class RadarMapOptionsFlow(_RadarMapFlowMixin, OptionsFlowWithReload):
                 CONF_REGIONS: list(user_input.get(CONF_REGIONS, [])),
                 CONF_CITIES: list(user_input.get(CONF_CITIES, [])),
                 CONF_DISTRICT_REGIONS: list(user_input.get(CONF_DISTRICT_REGIONS, [])),
+                CONF_POLL_INTERVAL: float(
+                    user_input.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)
+                ),
             }
             if self._pending[CONF_DISTRICT_REGIONS]:
                 return await self.async_step_districts()
@@ -280,6 +306,7 @@ class RadarMapOptionsFlow(_RadarMapFlowMixin, OptionsFlowWithReload):
             CONF_REGIONS: list(stored.get(CONF_REGIONS, [])),
             CONF_CITIES: list(stored.get(CONF_CITIES, [])),
             CONF_DISTRICT_REGIONS: list(stored.get(CONF_DISTRICT_REGIONS, [])),
+            CONF_POLL_INTERVAL: float(stored.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)),
         }
         return self.async_show_form(
             step_id="init",

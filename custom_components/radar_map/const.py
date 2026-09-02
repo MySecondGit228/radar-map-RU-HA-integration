@@ -29,6 +29,7 @@ CONF_CITIES: Final = "cities"
 CONF_DISTRICTS: Final = "districts"
 CONF_DISTRICT_REGIONS: Final = "district_regions"
 CONF_OBJECTS: Final = "objects"
+CONF_POLL_INTERVAL: Final = "poll_interval"
 
 OBJECT_REGION: Final = "region"
 OBJECT_DISTRICT: Final = "district"

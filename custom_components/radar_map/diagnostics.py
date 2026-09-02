@@ -41,6 +41,8 @@ async def async_get_config_entry_diagnostics(
         "poll_interval_sec": (
             coordinator.update_interval.total_seconds() if coordinator.update_interval else None
         ),
+        "configured_poll_interval_sec": coordinator.configured_poll_interval,
+        "server_poll_interval_sec": coordinator.server_poll_interval,
         "api_version": snapshot.version if snapshot else None,
         "selected_regions": [
             item.name for item in coordinator.selected_objects if item.object_type == "region"

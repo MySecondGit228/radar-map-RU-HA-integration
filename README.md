@@ -36,10 +36,17 @@ Config Flow проверяет публичный API и предлагает м
 Выбор можно изменить через **Configure** у config entry. Options Flow
 автоматически перезагрузит интеграцию. YAML-конфигурация не используется.
 
+Ползунок **Интервал опроса** доступен при установке и в Options Flow. Диапазон —
+15–300 секунд, шаг — 5 секунд, значение по умолчанию — 30 секунд. Это
+предпочтительный минимальный интервал: интеграция никогда не опрашивает API чаще,
+чем разрешает текущий `poll_interval_sec` RadarMap. Например, при настройке 15
+секунд и серверном значении 25 фактический интервал будет 25 секунд.
+
 ## Update transport
 
-Интеграция опрашивает `GET https://radar-map.ru/api/state?nofeed=1`. Она следует
-`client_live.poll_interval_sec` / `poll_interval_sec` сервера (fallback 30 секунд).
+Интеграция опрашивает `GET https://radar-map.ru/api/state?nofeed=1`. Фактический
+интервал равен большему из настроенного значения и серверного
+`client_live.poll_interval_sec` / `poll_interval_sec` (fallback 30 секунд).
 SSE и WebSocket сайта требуют платную Boosty-подписку, поэтому интеграция их не
 использует и не пытается обходить авторизацию. Детали исследования находятся в
 [`docs/api-research.md`](docs/api-research.md).
@@ -238,6 +245,14 @@ API не опубликован как формально версиониров
 schema, идентификаторов и доступности. `gid_2` стабилен в текущем наборе данных,
 но может измениться при замене геоданных RadarMap.
 
+## Branding
+
+Стандартная и hDPI-иконки находятся в
+`custom_components/radar_map/brand/icon.png` и `icon@2x.png`. Они включаются в
+HACS-пакет и используются Home Assistant 2026.3+ в списке интеграций и Config
+Flow. После обновления может потребоваться перезапуск Home Assistant и очистка
+кэша браузера.
+
 ## Development
 
 ```bash
@@ -260,8 +275,8 @@ ruff format --check .
 3. проверьте и опубликуйте релиз с префиксом `v`, например:
 
 ```bash
-python scripts/check_version.py v1.1.0
-gh release create v1.1.0 --target master --generate-notes
+python scripts/check_version.py v1.2.0
+gh release create v1.2.0 --target master --generate-notes
 ```
 
 Скрипт проверяет строгий формат SemVer и совпадение тега с версией manifest.

@@ -8,12 +8,14 @@
         "data": {
           "regions": "Regions",
           "cities": "Cities",
-          "district_regions": "Regions in which to select districts"
+          "district_regions": "Regions in which to select districts",
+          "poll_interval": "Polling interval"
         },
         "data_description": {
           "regions": "Create devices for these regions.",
           "cities": "Create devices for these cities.",
-          "district_regions": "This only controls which district catalogs are shown next; it does not create region devices."
+          "district_regions": "This only controls which district catalogs are shown next; it does not create region devices.",
+          "poll_interval": "Preferred minimum interval in seconds. RadarMap's server interval takes priority when it is longer."
         }
       },
       "districts": {
@@ -42,12 +44,14 @@
         "data": {
           "regions": "Regions",
           "cities": "Cities",
-          "district_regions": "Regions in which to select districts"
+          "district_regions": "Regions in which to select districts",
+          "poll_interval": "Polling interval"
         },
         "data_description": {
           "regions": "Create devices for these regions.",
           "cities": "Create devices for these cities.",
-          "district_regions": "This only controls which district catalogs are shown next; it does not create region devices."
+          "district_regions": "This only controls which district catalogs are shown next; it does not create region devices.",
+          "poll_interval": "Preferred minimum interval in seconds. RadarMap's server interval takes priority when it is longer."
         }
       },
       "districts": {

@@ -4,6 +4,14 @@
 [Keep a Changelog](https://keepachangelog.com/), версии следуют
 [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-09-02
+
+### Added
+
+- локальные brand icons для Home Assistant и HACS в размерах 256×256 и 512×512;
+- настраиваемый через UI интервал polling от 15 до 300 секунд;
+- diagnostics для настроенного, серверного и фактического интервала.
+
 ## [1.1.0] - 2026-09-02
 
 ### Added
@@ -21,5 +29,6 @@
 - Config Flow, Options Flow, native entities, events и diagnostics;
 - polling публичного RadarMap API с безопасной обработкой ошибок.
 
+[1.2.0]: https://github.com/MySecondGit228/radar-map-RU-HA-integration/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/MySecondGit228/radar-map-RU-HA-integration/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/MySecondGit228/radar-map-RU-HA-integration/releases/tag/v1.0.0

@@ -31,14 +31,19 @@ class RadarMapCoordinator(DataUpdateCoordinator[RadarMapSnapshot]):
         hass: HomeAssistant,
         client,
         selected_objects: tuple[RadarMapObject, ...],
+        configured_poll_interval: float = DEFAULT_POLL_INTERVAL,
         config_entry=None,
     ) -> None:
+        self.configured_poll_interval = max(
+            MIN_POLL_INTERVAL,
+            min(configured_poll_interval, MAX_POLL_INTERVAL),
+        )
         super().__init__(
             hass,
             _LOGGER,
             name="RadarMap",
             config_entry=config_entry,
-            update_interval=timedelta(seconds=DEFAULT_POLL_INTERVAL),
+            update_interval=timedelta(seconds=self.configured_poll_interval),
         )
         self.client = client
         self.selected_objects = selected_objects
@@ -48,6 +53,7 @@ class RadarMapCoordinator(DataUpdateCoordinator[RadarMapSnapshot]):
         self.last_successful_update: datetime | None = None
         self.last_error: str | None = None
         self.last_update_duration: float | None = None
+        self.server_poll_interval: float | None = None
 
     def get_object(self, object_id: str) -> RadarMapObject:
         """Return selected object state from the latest successful snapshot."""
@@ -77,10 +83,14 @@ class RadarMapCoordinator(DataUpdateCoordinator[RadarMapSnapshot]):
         self.last_update_duration = time.monotonic() - started
         self.last_successful_update = datetime.now(UTC)
         self.last_error = None
-        interval = max(
+        server_interval = max(
             MIN_POLL_INTERVAL,
             min(snapshot.poll_interval, MAX_POLL_INTERVAL),
         )
+        self.server_poll_interval = server_interval
+        # Never poll faster than either the user's preference or RadarMap's
+        # current server policy.
+        interval = max(self.configured_poll_interval, server_interval)
         self.update_interval = timedelta(seconds=interval)
 
         resolved_objects: dict[str, RadarMapObject] = {}

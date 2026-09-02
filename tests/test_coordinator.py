@@ -271,3 +271,32 @@ async def test_per_type_summary_preserves_unknown(
 
     assert entity.is_on is None
     assert entity.extra_state_attributes["active_object_count"] == 0
+
+
+async def test_configured_poll_interval_never_exceeds_server_rate(
+    hass,
+    snapshot,
+    selected_region,
+) -> None:
+    """User preference can slow polling but cannot violate the server interval."""
+    slower = RadarMapCoordinator(
+        hass,
+        SequenceClient([snapshot]),
+        (selected_region,),
+        configured_poll_interval=60,
+    )
+    await slower.async_refresh()
+    assert slower.configured_poll_interval == 60
+    assert slower.server_poll_interval == 25
+    assert slower.update_interval.total_seconds() == 60
+
+    faster = RadarMapCoordinator(
+        hass,
+        SequenceClient([snapshot]),
+        (selected_region,),
+        configured_poll_interval=15,
+    )
+    await faster.async_refresh()
+    assert faster.configured_poll_interval == 15
+    assert faster.server_poll_interval == 25
+    assert faster.update_interval.total_seconds() == 25

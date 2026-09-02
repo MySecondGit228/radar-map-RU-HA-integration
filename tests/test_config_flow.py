@@ -13,6 +13,7 @@ from custom_components.radar_map.const import (
     CONF_DISTRICT_REGIONS,
     CONF_DISTRICTS,
     CONF_OBJECTS,
+    CONF_POLL_INTERVAL,
     CONF_REGIONS,
     DOMAIN,
 )
@@ -51,6 +52,7 @@ async def test_config_flow_region_city_district_selection(
                 CONF_REGIONS: [selected_region.object_id],
                 CONF_CITIES: [city_id],
                 CONF_DISTRICT_REGIONS: ["Московская область"],
+                CONF_POLL_INTERVAL: 60,
             },
         )
         assert result["type"] is FlowResultType.FORM
@@ -65,6 +67,7 @@ async def test_config_flow_region_city_district_selection(
         assert options[CONF_REGIONS] == [selected_region.object_id]
         assert options[CONF_CITIES] == [city_id]
         assert options[CONF_DISTRICTS] == [selected_district.object_id]
+        assert options[CONF_POLL_INTERVAL] == 60
         assert {item["object_type"] for item in options[CONF_OBJECTS]} == {
             "region",
             "city",
@@ -111,6 +114,7 @@ async def test_options_flow_changes_selection(
                 CONF_REGIONS: [selected_region.object_id],
                 CONF_CITIES: [],
                 CONF_DISTRICT_REGIONS: [],
+                CONF_POLL_INTERVAL: 45,
             },
         )
         entry = result["result"]
@@ -125,10 +129,12 @@ async def test_options_flow_changes_selection(
                 CONF_REGIONS: [],
                 CONF_CITIES: [city_id],
                 CONF_DISTRICT_REGIONS: [],
+                CONF_POLL_INTERVAL: 120,
             },
         )
 
     assert result["type"] is FlowResultType.CREATE_ENTRY
     assert result["data"][CONF_REGIONS] == []
     assert result["data"][CONF_CITIES] == [city_id]
+    assert result["data"][CONF_POLL_INTERVAL] == 120
     assert [item["object_type"] for item in result["data"][CONF_OBJECTS]] == ["city"]

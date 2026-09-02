@@ -9,7 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import RadarMapClient
-from .const import PLATFORMS
+from .const import CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL, PLATFORMS
 from .coordinator import RadarMapCoordinator
 from .models import selected_objects_from_mapping
 
@@ -33,7 +33,13 @@ async def async_setup_entry(
     settings = entry.options or entry.data
     selected = selected_objects_from_mapping(settings)
     client = RadarMapClient(async_get_clientsession(hass))
-    coordinator = RadarMapCoordinator(hass, client, selected, config_entry=entry)
+    coordinator = RadarMapCoordinator(
+        hass,
+        client,
+        selected,
+        configured_poll_interval=float(settings.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL)),
+        config_entry=entry,
+    )
     await coordinator.async_config_entry_first_refresh()
 
     entry.runtime_data = RadarMapRuntimeData(client=client, coordinator=coordinator)

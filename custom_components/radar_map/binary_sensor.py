@@ -221,5 +221,7 @@ class RadarMapConnectionBinarySensor(RadarMapSummaryEntity, BinarySensorEntity):
             "last_successful_update": last_success.isoformat() if last_success else None,
             "last_error": self.coordinator.last_error,
             "poll_interval_sec": interval.total_seconds() if interval else None,
+            "configured_poll_interval_sec": self.coordinator.configured_poll_interval,
+            "server_poll_interval_sec": self.coordinator.server_poll_interval,
             "last_update_duration_sec": self.coordinator.last_update_duration,
         }

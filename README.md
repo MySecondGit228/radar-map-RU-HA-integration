@@ -74,10 +74,13 @@ sources
 presentation/animation fields не экспортируются как сущности.
 
 Для всей config entry создаётся отдельное устройство `RadarMap — Summary` с
-двумя общими binary sensors:
+общими binary sensors:
 
 - **Overall alert / Итоговая тревога** — включён, если `alert` активен хотя бы у
   одного выбранного региона, района или города;
+- отдельные агрегаты `bpla`, `attention`, `danger`, `uab`, `fpv`, `rocket`,
+  `rocket_level`, `aviation` и `pvo` — каждый включён, если соответствующий флаг
+  активен хотя бы у одного выбранного объекта;
 - **Connection / Подключение** (`device_class: connectivity`) — включён, если
   последний запрос RadarMap успешен, и выключен при ошибке API или сети.
 
@@ -96,6 +99,11 @@ active_objects_truncated
 в `active_object_count`. Если активных тревог нет, но одно из исходных полей
 неизвестно из-за изменения API schema, итоговый sensor получает `unknown`, а не
 ложный `off`.
+
+Каждый отдельный агрегат угрозы содержит `alert_type`, `selected_object_count`,
+`active_object_count`, `active_objects`, `active_object_ids` и
+`active_objects_truncated`. Поэтому, например, общий sensor БПЛА одновременно
+показывает факт угрозы и список выбранных объектов, где активен `bpla`.
 
 Sensor подключения намеренно остаётся доступным при сбое, чтобы показать `off`,
 пока остальные RadarMap entities становятся `unavailable`. Его атрибуты содержат

@@ -10,6 +10,7 @@ from custom_components.radar_map.binary_sensor import (
     RadarMapBinarySensor,
     RadarMapConnectionBinarySensor,
     RadarMapOverallAlertBinarySensor,
+    RadarMapSummaryAlertBinarySensor,
 )
 from custom_components.radar_map.const import EVENT_ALERT
 from custom_components.radar_map.coordinator import RadarMapCoordinator
@@ -213,3 +214,60 @@ async def test_overall_alert_aggregates_every_selected_object(
 
     await coordinator.async_refresh()
     assert entity.is_on is None
+
+
+async def test_per_type_summary_alerts_aggregate_every_selected_object(
+    hass,
+    state_payload,
+    selected_region,
+    selected_district,
+) -> None:
+    """Each summary flag reports matching objects across all object types."""
+    snapshot = RadarMapSnapshot.from_api(state_payload)
+    selected_city = snapshot.objects["city:москва|москва"].safe_copy()
+    coordinator = RadarMapCoordinator(
+        hass,
+        SequenceClient([snapshot]),
+        (selected_region, selected_district, selected_city),
+    )
+    await coordinator.async_refresh()
+
+    descriptions = {item.flag: item for item in SENSOR_DESCRIPTIONS}
+    bpla = RadarMapSummaryAlertBinarySensor(coordinator, descriptions["bpla"])
+    attention = RadarMapSummaryAlertBinarySensor(coordinator, descriptions["attention"])
+    danger = RadarMapSummaryAlertBinarySensor(coordinator, descriptions["danger"])
+
+    assert bpla.is_on is True
+    assert bpla.extra_state_attributes == {
+        "alert_type": "bpla",
+        "selected_object_count": 3,
+        "active_object_count": 1,
+        "active_objects": ["Москва"],
+        "active_object_ids": ["city:москва|москва"],
+        "active_objects_truncated": False,
+    }
+    assert attention.is_on is True
+    assert attention.extra_state_attributes["active_objects"] == ["Рузский район"]
+    assert danger.is_on is False
+
+
+async def test_per_type_summary_preserves_unknown(
+    hass,
+    state_payload,
+    selected_region,
+) -> None:
+    """A missing source flag makes its summary unknown instead of falsely safe."""
+    del state_payload["regions"]["Московская область"]["rocket"]
+    snapshot = RadarMapSnapshot.from_api(state_payload)
+    coordinator = RadarMapCoordinator(
+        hass,
+        SequenceClient([snapshot]),
+        (selected_region,),
+    )
+    await coordinator.async_refresh()
+    description = next(item for item in SENSOR_DESCRIPTIONS if item.flag == "rocket")
+
+    entity = RadarMapSummaryAlertBinarySensor(coordinator, description)
+
+    assert entity.is_on is None
+    assert entity.extra_state_attributes["active_object_count"] == 0

@@ -72,6 +72,10 @@ async def async_setup_entry(
                 for selected in coordinator.selected_objects
                 for description in (*SENSOR_DESCRIPTIONS, ALERT_DESCRIPTION)
             ),
+            *(
+                RadarMapSummaryAlertBinarySensor(coordinator, description)
+                for description in SENSOR_DESCRIPTIONS
+            ),
             RadarMapOverallAlertBinarySensor(coordinator),
             RadarMapConnectionBinarySensor(coordinator),
         ]
@@ -99,6 +103,52 @@ class RadarMapBinarySensor(RadarMapEntity, BinarySensorEntity):
         if self.entity_description.flag == "alert":
             return self.current.alert
         return self.current.flags.get(self.entity_description.flag)
+
+
+class RadarMapSummaryAlertBinarySensor(RadarMapSummaryEntity, BinarySensorEntity):
+    """Aggregate one alert type across every selected object."""
+
+    entity_description: RadarMapBinarySensorDescription
+
+    def __init__(
+        self,
+        coordinator,
+        description: RadarMapBinarySensorDescription,
+    ) -> None:
+        super().__init__(coordinator)
+        self.entity_description = description
+        self._attr_unique_id = f"{SUMMARY_OBJECT_ID}:{description.key}"
+
+    @property
+    def is_on(self) -> FlagValue:
+        """Return true if this flag is active for any selected object."""
+        values = [
+            self.coordinator.get_object(selected.object_id).flags.get(self.entity_description.flag)
+            for selected in self.coordinator.selected_objects
+        ]
+        if any(value is True for value in values):
+            return True
+        if any(value is None for value in values):
+            return None
+        return False
+
+    @property
+    def extra_state_attributes(self) -> dict[str, object]:
+        """Expose selected and active objects for this alert type."""
+        objects = [
+            self.coordinator.get_object(selected.object_id)
+            for selected in self.coordinator.selected_objects
+        ]
+        active = [item for item in objects if item.flags.get(self.entity_description.flag) is True]
+        displayed = active[:MAX_SUMMARY_OBJECTS_ATTRIBUTE]
+        return {
+            "alert_type": self.entity_description.flag,
+            "selected_object_count": len(objects),
+            "active_object_count": len(active),
+            "active_objects": [item.name for item in displayed],
+            "active_object_ids": [item.object_id for item in displayed],
+            "active_objects_truncated": len(active) > len(displayed),
+        }
 
 
 class RadarMapOverallAlertBinarySensor(RadarMapSummaryEntity, BinarySensorEntity):

@@ -1,5 +1,7 @@
 # RadarMap for Home Assistant
 
+[![GitHub release](https://img.shields.io/github/v/release/MySecondGit228/radar-map-RU-HA-integration)](https://github.com/MySecondGit228/radar-map-RU-HA-integration/releases)
+
 Неофициальная custom integration для [RadarMap](https://radar-map.ru/). Она
 получает публичный агрегированный state RadarMap и предоставляет выбранные
 регионы, районы и населённые пункты как нативные devices, binary sensors и
@@ -14,6 +16,10 @@ timestamp sensors Home Assistant.
 3. Добавьте URL этого репозитория с категорией **Integration**.
 4. Найдите и установите **RadarMap**.
 5. Перезапустите Home Assistant.
+
+HACS показывает установленную и доступную версии из `manifest.json` и GitHub
+Releases. Если обновление не появилось сразу, обновите сведения о репозитории в
+HACS.
 
 Для ручной установки скопируйте `custom_components/radar_map` в каталог
 `config/custom_components/` Home Assistant и перезапустите Home Assistant.
@@ -240,5 +246,25 @@ pytest
 ruff check .
 ruff format --check .
 ```
+
+## Versioning and releases
+
+Проект использует [Semantic Versioning](https://semver.org/). Единственный
+источник версии — поле `version` в
+`custom_components/radar_map/manifest.json`.
+
+Для релиза:
+
+1. обновите версию в `manifest.json` и `CHANGELOG.md`;
+2. закоммитьте изменения;
+3. проверьте и опубликуйте релиз с префиксом `v`, например:
+
+```bash
+python scripts/check_version.py v1.1.0
+gh release create v1.1.0 --target master --generate-notes
+```
+
+Скрипт проверяет строгий формат SemVer и совпадение тега с версией manifest.
+Именно GitHub Release, а не просто тег, используется HACS как remote version.
 
 License: MIT.

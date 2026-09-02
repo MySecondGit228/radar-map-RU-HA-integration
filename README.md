@@ -73,6 +73,24 @@ sources
 `fill`, `bplaDim`, `uabDim`, `bplaLaunchAnim`, `rocketOnRegion` и прочие
 presentation/animation fields не экспортируются как сущности.
 
+Для всей config entry создаётся отдельное устройство `RadarMap — Summary` с
+`binary_sensor` **Overall alert / Итоговая тревога**. Он включён, если `alert`
+активен хотя бы у одного выбранного региона, района или города. Его атрибуты:
+
+```text
+selected_object_count
+active_object_count
+active_objects
+active_object_ids
+active_alert_types
+active_objects_truncated
+```
+
+Списки ограничены первыми 50 активными объектами, а полное число всегда доступно
+в `active_object_count`. Если активных тревог нет, но одно из исходных полей
+неизвестно из-за изменения API schema, итоговый sensor получает `unknown`, а не
+ложный `off`.
+
 Unique ID стабилен в рамках идентификаторов RadarMap:
 
 ```text
@@ -89,7 +107,7 @@ city:<key>:<entity>
 ```json
 {
   "object_type": "district",
-  "object_id": "district:RUS.50.1_1",
+  "object_id": "district:RUS.44.57_1",
   "name": "Рузский район",
   "region": "Московская область",
   "alert_type": "bpla",
@@ -140,6 +158,25 @@ automation:
         data:
           title: "RadarMap: {{ trigger.event.data.name }}"
           message: "{{ trigger.event.data.alert_type }}"
+```
+
+Автоматизация по итоговому состоянию может использовать общий sensor без
+перечисления отдельных объектов:
+
+```yaml
+automation:
+  - alias: "RadarMap — итоговая тревога"
+    triggers:
+      - trigger: state
+        entity_id: binary_sensor.radarmap_summary_overall_alert
+        to: "on"
+    actions:
+      - action: notify.mobile_app_phone
+        data:
+          title: "RadarMap"
+          message: >
+            Активны: {{ state_attr('binary_sensor.radarmap_summary_overall_alert',
+                                   'active_objects') | join(', ') }}
 ```
 
 ## Availability and diagnostics

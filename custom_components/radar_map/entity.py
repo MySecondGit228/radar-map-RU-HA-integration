@@ -5,7 +5,7 @@ from __future__ import annotations
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import API_BASE_URL, DOMAIN
+from .const import API_BASE_URL, DOMAIN, SUMMARY_OBJECT_ID
 from .coordinator import RadarMapCoordinator
 from .models import RadarMapObject
 
@@ -40,3 +40,20 @@ class RadarMapEntity(CoordinatorEntity[RadarMapCoordinator]):
             "source": sources[0] if len(sources) == 1 else None,
             "sources": sources,
         }
+
+
+class RadarMapSummaryEntity(CoordinatorEntity[RadarMapCoordinator]):
+    """Base class for entities aggregating every selected RadarMap object."""
+
+    _attr_has_entity_name = True
+    _attr_attribution = "Data provided by RadarMap (radar-map.ru)"
+
+    def __init__(self, coordinator: RadarMapCoordinator) -> None:
+        super().__init__(coordinator)
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, SUMMARY_OBJECT_ID)},
+            name="RadarMap — Summary",
+            manufacturer="RadarMap",
+            model="RadarMap summary",
+            configuration_url=API_BASE_URL,
+        )

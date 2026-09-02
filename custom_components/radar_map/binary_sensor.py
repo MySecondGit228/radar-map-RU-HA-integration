@@ -12,8 +12,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from . import RadarMapConfigEntry
-from .const import ALERT_FIELDS
-from .entity import RadarMapEntity
+from .const import (
+    AGGREGATE_ALERT_FIELDS,
+    ALERT_FIELDS,
+    MAX_SUMMARY_OBJECTS_ATTRIBUTE,
+    SUMMARY_OBJECT_ID,
+)
+from .entity import RadarMapEntity, RadarMapSummaryEntity
 from .models import FlagValue, RadarMapObject
 
 
@@ -60,9 +65,14 @@ async def async_setup_entry(
     """Set up RadarMap binary sensors from a config entry."""
     coordinator = entry.runtime_data.coordinator
     async_add_entities(
-        RadarMapBinarySensor(coordinator, selected, description)
-        for selected in coordinator.selected_objects
-        for description in (*SENSOR_DESCRIPTIONS, ALERT_DESCRIPTION)
+        [
+            *(
+                RadarMapBinarySensor(coordinator, selected, description)
+                for selected in coordinator.selected_objects
+                for description in (*SENSOR_DESCRIPTIONS, ALERT_DESCRIPTION)
+            ),
+            RadarMapOverallAlertBinarySensor(coordinator),
+        ]
     )
 
 
@@ -87,3 +97,47 @@ class RadarMapBinarySensor(RadarMapEntity, BinarySensorEntity):
         if self.entity_description.flag == "alert":
             return self.current.alert
         return self.current.flags.get(self.entity_description.flag)
+
+
+class RadarMapOverallAlertBinarySensor(RadarMapSummaryEntity, BinarySensorEntity):
+    """Aggregate alert state across every object selected in the config entry."""
+
+    _attr_translation_key = "overall_alert"
+    _attr_icon = "mdi:alert-decagram"
+    _attr_unique_id = f"{SUMMARY_OBJECT_ID}:alert"
+
+    @property
+    def is_on(self) -> FlagValue:
+        """Return true if any selected object has an actual active threat."""
+        values = [
+            self.coordinator.get_object(selected.object_id).alert
+            for selected in self.coordinator.selected_objects
+        ]
+        if any(value is True for value in values):
+            return True
+        if any(value is None for value in values):
+            return None
+        return False
+
+    @property
+    def extra_state_attributes(self) -> dict[str, object]:
+        """Expose a bounded summary suitable for automations and dashboards."""
+        objects = [
+            self.coordinator.get_object(selected.object_id)
+            for selected in self.coordinator.selected_objects
+        ]
+        active = [item for item in objects if item.alert is True]
+        displayed = active[:MAX_SUMMARY_OBJECTS_ATTRIBUTE]
+        active_types = [
+            alert_type
+            for alert_type in AGGREGATE_ALERT_FIELDS
+            if any(item.flags.get(alert_type) is True for item in active)
+        ]
+        return {
+            "selected_object_count": len(self.coordinator.selected_objects),
+            "active_object_count": len(active),
+            "active_objects": [item.name for item in displayed],
+            "active_object_ids": [item.object_id for item in displayed],
+            "active_alert_types": active_types,
+            "active_objects_truncated": len(active) > len(displayed),
+        }

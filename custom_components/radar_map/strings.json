@@ -76,7 +76,8 @@
       "rocket_level": { "name": "Rocket danger" },
       "aviation": { "name": "Aviation danger" },
       "pvo": { "name": "Air defense" },
-      "alert": { "name": "Alert" }
+      "alert": { "name": "Alert" },
+      "overall_alert": { "name": "Overall alert" }
     },
     "sensor": {
       "last_event": { "name": "Last event" }

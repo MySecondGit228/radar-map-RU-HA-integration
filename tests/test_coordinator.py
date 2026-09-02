@@ -8,6 +8,7 @@ from custom_components.radar_map.api import RadarMapConnectionError
 from custom_components.radar_map.binary_sensor import (
     SENSOR_DESCRIPTIONS,
     RadarMapBinarySensor,
+    RadarMapOverallAlertBinarySensor,
 )
 from custom_components.radar_map.const import EVENT_ALERT
 from custom_components.radar_map.coordinator import RadarMapCoordinator
@@ -157,3 +158,48 @@ async def test_unknown_schema_value_does_not_emit_false_event(
 
     assert coordinator.get_object(selected_region.object_id).flags["bpla"] is None
     assert not [event for event in events if event.data["alert_type"] == "bpla"]
+
+
+async def test_overall_alert_aggregates_every_selected_object(
+    hass,
+    state_payload,
+    selected_region,
+    selected_district,
+) -> None:
+    """The summary reports on/off/unknown across regions, districts and cities."""
+    on = RadarMapSnapshot.from_api(state_payload)
+    selected_city = on.objects["city:москва|москва"].safe_copy()
+
+    off_payload = deepcopy(state_payload)
+    off_payload["cities"][0]["bpla"] = False
+    off_payload["cities"][0]["fpv"] = False
+    off = RadarMapSnapshot.from_api(off_payload)
+
+    unknown_payload = deepcopy(off_payload)
+    del unknown_payload["regions"]["Московская область"]["bpla"]
+    unknown = RadarMapSnapshot.from_api(unknown_payload)
+
+    coordinator = RadarMapCoordinator(
+        hass,
+        SequenceClient([on, off, unknown]),
+        (selected_region, selected_district, selected_city),
+    )
+    entity = RadarMapOverallAlertBinarySensor(coordinator)
+
+    await coordinator.async_refresh()
+    assert entity.is_on is True
+    assert entity.extra_state_attributes == {
+        "selected_object_count": 3,
+        "active_object_count": 1,
+        "active_objects": ["Москва"],
+        "active_object_ids": ["city:москва|москва"],
+        "active_alert_types": ["bpla", "fpv"],
+        "active_objects_truncated": False,
+    }
+
+    await coordinator.async_refresh()
+    assert entity.is_on is False
+    assert entity.extra_state_attributes["active_object_count"] == 0
+
+    await coordinator.async_refresh()
+    assert entity.is_on is None

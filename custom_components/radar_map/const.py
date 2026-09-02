@@ -22,6 +22,7 @@ MAX_POLL_INTERVAL: Final = 300.0
 REQUEST_TIMEOUT: Final = 15.0
 USER_AGENT: Final = "HomeAssistant-RadarMap/1.0"
 MAX_SOURCE_TEXT_LENGTH: Final = 2048
+MAX_SUMMARY_OBJECTS_ATTRIBUTE: Final = 50
 
 CONF_REGIONS: Final = "regions"
 CONF_CITIES: Final = "cities"
@@ -61,4 +62,5 @@ AGGREGATE_ALERT_FIELDS: Final = (
 )
 
 EVENT_ALERT: Final = "radar_map_alert"
+SUMMARY_OBJECT_ID: Final = "summary"
 PLATFORMS: Final = ("binary_sensor", "sensor")

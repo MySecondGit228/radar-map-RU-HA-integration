@@ -73,7 +73,8 @@
       "aviation": { "name": "Aviation danger" },
       "pvo": { "name": "Air defense" },
       "alert": { "name": "Alert" },
-      "overall_alert": { "name": "Overall alert" }
+      "overall_alert": { "name": "Overall alert" },
+      "connection": { "name": "Connection" }
     },
     "sensor": {
       "last_event": { "name": "Last event" }

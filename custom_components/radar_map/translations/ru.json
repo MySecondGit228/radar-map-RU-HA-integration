@@ -73,7 +73,8 @@
       "aviation": { "name": "Авиационная опасность" },
       "pvo": { "name": "Работа ПВО" },
       "alert": { "name": "Тревога объекта" },
-      "overall_alert": { "name": "Итоговая тревога" }
+      "overall_alert": { "name": "Итоговая тревога" },
+      "connection": { "name": "Подключение" }
     },
     "sensor": {
       "last_event": { "name": "Последнее событие" }

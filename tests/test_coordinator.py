@@ -8,6 +8,7 @@ from custom_components.radar_map.api import RadarMapConnectionError
 from custom_components.radar_map.binary_sensor import (
     SENSOR_DESCRIPTIONS,
     RadarMapBinarySensor,
+    RadarMapConnectionBinarySensor,
     RadarMapOverallAlertBinarySensor,
 )
 from custom_components.radar_map.const import EVENT_ALERT
@@ -85,14 +86,20 @@ async def test_outage_keeps_data_unavailable_then_recovers(
     assert coordinator.get_object(selected_region.object_id).flags["bpla"] is True
     description = next(item for item in SENSOR_DESCRIPTIONS if item.flag == "bpla")
     entity = RadarMapBinarySensor(coordinator, selected_region, description)
+    connection = RadarMapConnectionBinarySensor(coordinator)
     assert entity.is_on is True
     assert entity.available is True
+    assert connection.is_on is True
+    assert connection.available is True
 
     await coordinator.async_refresh()
     assert coordinator.last_update_success is False
     assert coordinator.get_object(selected_region.object_id).flags["bpla"] is True
     assert entity.is_on is True
     assert entity.available is False
+    assert connection.is_on is False
+    assert connection.available is True
+    assert connection.extra_state_attributes["last_error"] == "offline"
     assert coordinator.last_error == "offline"
 
     await coordinator.async_refresh()
@@ -100,6 +107,9 @@ async def test_outage_keeps_data_unavailable_then_recovers(
     assert coordinator.get_object(selected_region.object_id).flags["bpla"] is False
     assert entity.is_on is False
     assert entity.available is True
+    assert connection.is_on is True
+    assert connection.available is True
+    assert connection.extra_state_attributes["last_error"] is None
     assert coordinator.last_error is None
 
 

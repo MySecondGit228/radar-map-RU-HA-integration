@@ -74,8 +74,14 @@ sources
 presentation/animation fields не экспортируются как сущности.
 
 Для всей config entry создаётся отдельное устройство `RadarMap — Summary` с
-`binary_sensor` **Overall alert / Итоговая тревога**. Он включён, если `alert`
-активен хотя бы у одного выбранного региона, района или города. Его атрибуты:
+двумя общими binary sensors:
+
+- **Overall alert / Итоговая тревога** — включён, если `alert` активен хотя бы у
+  одного выбранного региона, района или города;
+- **Connection / Подключение** (`device_class: connectivity`) — включён, если
+  последний запрос RadarMap успешен, и выключен при ошибке API или сети.
+
+Атрибуты итоговой тревоги:
 
 ```text
 selected_object_count
@@ -90,6 +96,11 @@ active_objects_truncated
 в `active_object_count`. Если активных тревог нет, но одно из исходных полей
 неизвестно из-за изменения API schema, итоговый sensor получает `unknown`, а не
 ложный `off`.
+
+Sensor подключения намеренно остаётся доступным при сбое, чтобы показать `off`,
+пока остальные RadarMap entities становятся `unavailable`. Его атрибуты содержат
+`last_successful_update`, `last_error`, `poll_interval_sec` и
+`last_update_duration_sec`.
 
 Unique ID стабилен в рамках идентификаторов RadarMap:
 

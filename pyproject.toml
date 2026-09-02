@@ -1,0 +1,28 @@
+[project]
+name = "radar-map-home-assistant"
+version = "1.0.0"
+description = "RadarMap custom integration for Home Assistant"
+requires-python = ">=3.13"
+license = { text = "MIT" }
+
+[project.optional-dependencies]
+test = [
+  "pytest",
+  "pytest-asyncio",
+  "pytest-homeassistant-custom-component",
+]
+lint = ["ruff"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["custom_components.radar_map"]

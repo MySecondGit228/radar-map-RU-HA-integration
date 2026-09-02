@@ -1,0 +1,85 @@
+{
+  "title": "RadarMap",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up RadarMap",
+        "description": "Select only the locations you want to expose. District files are loaded in the next step only for the chosen district regions.",
+        "data": {
+          "regions": "Regions",
+          "cities": "Cities",
+          "district_regions": "Regions in which to select districts"
+        },
+        "data_description": {
+          "regions": "Create devices for these regions.",
+          "cities": "Create devices for these cities.",
+          "district_regions": "This only controls which district catalogs are shown next; it does not create region devices."
+        }
+      },
+      "districts": {
+        "title": "Select districts",
+        "description": "Choose districts from the region catalogs selected in the previous step.",
+        "data": {
+          "districts": "Districts"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to RadarMap",
+      "invalid_response": "RadarMap returned an invalid or changed response",
+      "api_error": "RadarMap returned an error",
+      "no_selection": "Select at least one region, district, or city"
+    },
+    "abort": {
+      "already_configured": "RadarMap is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "RadarMap locations",
+        "description": "Change the locations exposed by this integration.",
+        "data": {
+          "regions": "Regions",
+          "cities": "Cities",
+          "district_regions": "Regions in which to select districts"
+        },
+        "data_description": {
+          "regions": "Create devices for these regions.",
+          "cities": "Create devices for these cities.",
+          "district_regions": "This only controls which district catalogs are shown next; it does not create region devices."
+        }
+      },
+      "districts": {
+        "title": "Select districts",
+        "description": "Choose districts from the selected region catalogs.",
+        "data": {
+          "districts": "Districts"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to RadarMap",
+      "invalid_response": "RadarMap returned an invalid or changed response",
+      "api_error": "RadarMap returned an error",
+      "no_selection": "Select at least one region, district, or city"
+    }
+  },
+  "entity": {
+    "binary_sensor": {
+      "bpla": { "name": "Drone" },
+      "attention": { "name": "Warning" },
+      "danger": { "name": "Danger" },
+      "uab": { "name": "Glide bomb" },
+      "fpv": { "name": "FPV drone" },
+      "rocket": { "name": "Rocket" },
+      "rocket_level": { "name": "Rocket danger" },
+      "aviation": { "name": "Aviation danger" },
+      "pvo": { "name": "Air defense" },
+      "alert": { "name": "Alert" }
+    },
+    "sensor": {
+      "last_event": { "name": "Last event" }
+    }
+  }
+}

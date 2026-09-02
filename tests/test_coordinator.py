@@ -1,0 +1,159 @@
+"""Coordinator event and availability tests."""
+
+from __future__ import annotations
+
+from copy import deepcopy
+
+from custom_components.radar_map.api import RadarMapConnectionError
+from custom_components.radar_map.binary_sensor import (
+    SENSOR_DESCRIPTIONS,
+    RadarMapBinarySensor,
+)
+from custom_components.radar_map.const import EVENT_ALERT
+from custom_components.radar_map.coordinator import RadarMapCoordinator
+from custom_components.radar_map.models import RadarMapSnapshot
+
+
+class SequenceClient:
+    """Return snapshots/errors in order."""
+
+    def __init__(self, values):
+        self.values = iter(values)
+
+    async def async_get_state(self):
+        value = next(self.values)
+        if isinstance(value, Exception):
+            raise value
+        return value
+
+
+def _with_bpla(state_payload: dict, value: bool) -> RadarMapSnapshot:
+    payload = deepcopy(state_payload)
+    payload["regions"]["Московская область"]["bpla"] = value
+    payload["regions"]["Московская область"]["source_text"] = (
+        "Начало опасности" if value else "Отбой опасности"
+    )
+    payload["regions"]["Московская область"]["last_event_ts"] += int(value)
+    return RadarMapSnapshot.from_api(payload)
+
+
+async def test_false_true_false_and_no_duplicate_events(
+    hass,
+    state_payload,
+    selected_region,
+) -> None:
+    """Only real transitions emit bus events, including an end transition."""
+    off = _with_bpla(state_payload, False)
+    on = _with_bpla(state_payload, True)
+    events = []
+    hass.bus.async_listen(EVENT_ALERT, events.append)
+    coordinator = RadarMapCoordinator(
+        hass,
+        SequenceClient([off, on, on, off]),
+        (selected_region,),
+    )
+
+    await coordinator.async_refresh()  # Initial state: no event.
+    await coordinator.async_refresh()  # false -> true.
+    await hass.async_block_till_done()
+    await coordinator.async_refresh()  # unchanged: no duplicate.
+    await coordinator.async_refresh()  # true -> false.
+    await hass.async_block_till_done()
+
+    bpla_events = [event for event in events if event.data["alert_type"] == "bpla"]
+    assert [event.data["state"] for event in bpla_events] == ["on", "off"]
+    assert bpla_events[0].data["name"] == "Московская область"
+
+
+async def test_outage_keeps_data_unavailable_then_recovers(
+    hass,
+    state_payload,
+    selected_region,
+) -> None:
+    """Network UNKNOWN is not safe/off and the coordinator recovers automatically."""
+    on = _with_bpla(state_payload, True)
+    off = _with_bpla(state_payload, False)
+    coordinator = RadarMapCoordinator(
+        hass,
+        SequenceClient([on, RadarMapConnectionError("offline"), off]),
+        (selected_region,),
+    )
+
+    await coordinator.async_refresh()
+    assert coordinator.last_update_success is True
+    assert coordinator.get_object(selected_region.object_id).flags["bpla"] is True
+    description = next(item for item in SENSOR_DESCRIPTIONS if item.flag == "bpla")
+    entity = RadarMapBinarySensor(coordinator, selected_region, description)
+    assert entity.is_on is True
+    assert entity.available is True
+
+    await coordinator.async_refresh()
+    assert coordinator.last_update_success is False
+    assert coordinator.get_object(selected_region.object_id).flags["bpla"] is True
+    assert entity.is_on is True
+    assert entity.available is False
+    assert coordinator.last_error == "offline"
+
+    await coordinator.async_refresh()
+    assert coordinator.last_update_success is True
+    assert coordinator.get_object(selected_region.object_id).flags["bpla"] is False
+    assert entity.is_on is False
+    assert entity.available is True
+    assert coordinator.last_error is None
+
+
+async def test_object_removed_from_valid_snapshot_turns_off_and_keeps_last_event(
+    hass,
+    state_payload,
+    selected_region,
+) -> None:
+    """Removal from a full valid snapshot is safe, unlike a failed request."""
+    on = _with_bpla(state_payload, True)
+    without_region_payload = deepcopy(state_payload)
+    without_region_payload["regions"] = {}
+    without_region = RadarMapSnapshot.from_api(without_region_payload)
+    events = []
+    hass.bus.async_listen(EVENT_ALERT, events.append)
+    coordinator = RadarMapCoordinator(
+        hass,
+        SequenceClient([on, without_region]),
+        (selected_region,),
+    )
+
+    await coordinator.async_refresh()
+    previous_timestamp = coordinator.get_object(selected_region.object_id).last_event_ts
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    current = coordinator.get_object(selected_region.object_id)
+    assert current.flags["bpla"] is False
+    assert current.last_event_ts == previous_timestamp
+    assert [event.data["state"] for event in events if event.data["alert_type"] == "bpla"] == [
+        "off"
+    ]
+
+
+async def test_unknown_schema_value_does_not_emit_false_event(
+    hass,
+    state_payload,
+    selected_region,
+) -> None:
+    """A changed/missing flag becomes unknown without a false-clear event."""
+    on = _with_bpla(state_payload, True)
+    changed_payload = deepcopy(state_payload)
+    del changed_payload["regions"]["Московская область"]["bpla"]
+    changed = RadarMapSnapshot.from_api(changed_payload)
+    events = []
+    hass.bus.async_listen(EVENT_ALERT, events.append)
+    coordinator = RadarMapCoordinator(
+        hass,
+        SequenceClient([on, changed]),
+        (selected_region,),
+    )
+
+    await coordinator.async_refresh()
+    await coordinator.async_refresh()
+    await hass.async_block_till_done()
+
+    assert coordinator.get_object(selected_region.object_id).flags["bpla"] is None
+    assert not [event for event in events if event.data["alert_type"] == "bpla"]

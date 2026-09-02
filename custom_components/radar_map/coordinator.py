@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import time
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
 from homeassistant.core import HomeAssistant
@@ -21,6 +22,45 @@ from .const import (
 from .models import RadarMapObject, RadarMapSnapshot
 
 _LOGGER = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True, slots=True)
+class RadarMapSemanticEvent:
+    """One observed semantic state transition for a selected object."""
+
+    object_type: str
+    object_id: str
+    name: str
+    region: str | None
+    alert_type: str
+    state: str
+    observed_at: str
+    api_last_event_ts: int | None
+    source_text: str | None
+    sources: tuple[str, ...]
+
+    @property
+    def code(self) -> str:
+        """Return a stable machine-readable event code."""
+        suffix = "started" if self.state == "on" else "ended"
+        return f"{self.alert_type}_{suffix}"
+
+    def as_attributes(self) -> dict[str, object]:
+        """Return compact Home Assistant state attributes."""
+        return {
+            "event_code": self.code,
+            "alert_type": self.alert_type,
+            "state": self.state,
+            "transition": self.state,
+            "event_timestamp": self.observed_at,
+            "api_last_event_ts": self.api_last_event_ts,
+            "object_type": self.object_type,
+            "object_id": self.object_id,
+            "name": self.name,
+            "region": self.region,
+            "source_text": self.source_text,
+            "sources": list(self.sources),
+        }
 
 
 class RadarMapCoordinator(DataUpdateCoordinator[RadarMapSnapshot]):
@@ -54,6 +94,8 @@ class RadarMapCoordinator(DataUpdateCoordinator[RadarMapSnapshot]):
         self.last_error: str | None = None
         self.last_update_duration: float | None = None
         self.server_poll_interval: float | None = None
+        self.last_events: dict[str, RadarMapSemanticEvent] = {}
+        self.last_event: RadarMapSemanticEvent | None = None
 
     def get_object(self, object_id: str) -> RadarMapObject:
         """Return selected object state from the latest successful snapshot."""
@@ -61,6 +103,10 @@ class RadarMapCoordinator(DataUpdateCoordinator[RadarMapSnapshot]):
         if self.data is None:
             return selected.safe_copy()
         return self._resolved_objects.get(object_id, selected.safe_copy())
+
+    def get_last_event(self, object_id: str) -> RadarMapSemanticEvent | None:
+        """Return the latest semantic transition observed for one object."""
+        return self.last_events.get(object_id)
 
     async def _async_update_data(self) -> RadarMapSnapshot:
         started = time.monotonic()
@@ -123,6 +169,7 @@ class RadarMapCoordinator(DataUpdateCoordinator[RadarMapSnapshot]):
         current: dict[str, dict[str, bool | None]],
     ) -> None:
         changes = 0
+        observed_at = datetime.now(UTC).isoformat()
         for selected in self.selected_objects:
             old_flags = previous.get(selected.object_id, {})
             new_flags = current[selected.object_id]
@@ -133,19 +180,24 @@ class RadarMapCoordinator(DataUpdateCoordinator[RadarMapSnapshot]):
                 # Unknown due to a schema change is not equivalent to safe.
                 if not isinstance(old, bool) or not isinstance(new, bool) or old == new:
                     continue
-                payload = {
-                    "object_type": item.object_type,
-                    "object_id": item.object_id,
-                    "name": item.name,
-                    "region": item.region,
-                    "alert_type": alert_type,
-                    "state": "on" if new else "off",
-                    "last_event_ts": item.last_event_ts,
-                    "source_text": (
+                event = RadarMapSemanticEvent(
+                    object_type=item.object_type,
+                    object_id=item.object_id,
+                    name=item.name,
+                    region=item.region,
+                    alert_type=alert_type,
+                    state="on" if new else "off",
+                    observed_at=observed_at,
+                    api_last_event_ts=item.last_event_ts,
+                    source_text=(
                         item.source_text[:MAX_SOURCE_TEXT_LENGTH] if item.source_text else None
                     ),
-                    "sources": list(item.sources),
-                }
+                    sources=item.sources,
+                )
+                self.last_events[item.object_id] = event
+                self.last_event = event
+                payload = event.as_attributes()
+                payload["last_event_ts"] = item.last_event_ts
                 self.hass.bus.async_fire(EVENT_ALERT, payload)
                 changes += 1
         if changes:

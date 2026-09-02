@@ -19,6 +19,7 @@ async def async_get_config_entry_diagnostics(
     selected_state: list[dict[str, Any]] = []
     for selected in coordinator.selected_objects:
         current = coordinator.get_object(selected.object_id)
+        semantic_event = coordinator.get_last_event(selected.object_id)
         selected_state.append(
             {
                 "object_id": current.object_id,
@@ -27,6 +28,7 @@ async def async_get_config_entry_diagnostics(
                 "region": current.region,
                 "flags": dict(current.flags),
                 "last_event_ts": current.last_event_ts,
+                "last_event_type": semantic_event.code if semantic_event else None,
                 "sources": list(current.sources),
             }
         )
@@ -55,5 +57,8 @@ async def async_get_config_entry_diagnostics(
         ],
         "last_error": coordinator.last_error,
         "last_update_duration_sec": coordinator.last_update_duration,
+        "last_semantic_event": (
+            coordinator.last_event.as_attributes() if coordinator.last_event else None
+        ),
         "selected_state": selected_state,
     }

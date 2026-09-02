@@ -4,6 +4,15 @@
 [Keep a Changelog](https://keepachangelog.com/), версии следуют
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-09-02
+
+### Added
+
+- структурированный sensor последнего semantic-события для каждого объекта;
+- общий sensor последнего события среди всех выбранных объектов;
+- локализованные состояния начала и окончания каждого типа угрозы;
+- восстановление последнего события после перезапуска Home Assistant.
+
 ## [1.2.0] - 2026-09-02
 
 ### Added
@@ -29,6 +38,7 @@
 - Config Flow, Options Flow, native entities, events и diagnostics;
 - polling публичного RadarMap API с безопасной обработкой ошибок.
 
+[1.3.0]: https://github.com/MySecondGit228/radar-map-RU-HA-integration/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/MySecondGit228/radar-map-RU-HA-integration/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/MySecondGit228/radar-map-RU-HA-integration/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/MySecondGit228/radar-map-RU-HA-integration/releases/tag/v1.0.0

@@ -49,6 +49,10 @@ ALERT_FIELDS: Final = (
     "pvo",
 )
 
+EVENT_CODES: Final = tuple(
+    f"{alert_type}_{suffix}" for alert_type in ALERT_FIELDS for suffix in ("started", "ended")
+)
+
 # Attention is deliberately a separate warning. PVO is an observed defensive
 # event, not itself an active threat. rocket_level is included because the
 # RadarMap frontend treats it as rocket/aviation danger.

@@ -81,7 +81,30 @@
       "connection": { "name": "Подключение" }
     },
     "sensor": {
-      "last_event": { "name": "Последнее событие" }
+      "last_event": { "name": "Время последнего события" },
+      "last_event_type": {
+        "name": "Последнее событие",
+        "state": {
+          "bpla_started": "Начало угрозы БПЛА",
+          "bpla_ended": "Отбой угрозы БПЛА",
+          "attention_started": "Объявлено внимание по БПЛА",
+          "attention_ended": "Внимание по БПЛА снято",
+          "danger_started": "Начало опасности",
+          "danger_ended": "Отбой опасности",
+          "uab_started": "Начало угрозы УАБ",
+          "uab_ended": "Отбой угрозы УАБ",
+          "fpv_started": "Начало угрозы FPV-дронов",
+          "fpv_ended": "Отбой угрозы FPV-дронов",
+          "rocket_started": "Начало ракетной угрозы",
+          "rocket_ended": "Отбой ракетной угрозы",
+          "rocket_level_started": "Объявлена ракетная опасность",
+          "rocket_level_ended": "Ракетная опасность отменена",
+          "aviation_started": "Объявлена авиационная опасность",
+          "aviation_ended": "Авиационная опасность отменена",
+          "pvo_started": "Зафиксирована работа ПВО",
+          "pvo_ended": "Работа ПВО завершена"
+        }
+      }
     }
   }
 }

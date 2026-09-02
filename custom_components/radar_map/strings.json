@@ -85,7 +85,30 @@
       "connection": { "name": "Connection" }
     },
     "sensor": {
-      "last_event": { "name": "Last event" }
+      "last_event": { "name": "Last event time" },
+      "last_event_type": {
+        "name": "Last event",
+        "state": {
+          "bpla_started": "Drone threat started",
+          "bpla_ended": "Drone threat ended",
+          "attention_started": "Drone warning started",
+          "attention_ended": "Drone warning ended",
+          "danger_started": "Danger started",
+          "danger_ended": "Danger ended",
+          "uab_started": "Glide bomb threat started",
+          "uab_ended": "Glide bomb threat ended",
+          "fpv_started": "FPV drone threat started",
+          "fpv_ended": "FPV drone threat ended",
+          "rocket_started": "Rocket threat started",
+          "rocket_ended": "Rocket threat ended",
+          "rocket_level_started": "Rocket danger started",
+          "rocket_level_ended": "Rocket danger ended",
+          "aviation_started": "Aviation danger started",
+          "aviation_ended": "Aviation danger ended",
+          "pvo_started": "Air defense activity started",
+          "pvo_ended": "Air defense activity ended"
+        }
+      }
     }
   }
 }

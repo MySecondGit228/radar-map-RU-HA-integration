@@ -83,6 +83,24 @@ source
 sources
 ```
 
+Рядом создаётся текстовый `sensor.<object>_last_event_type`, который показывает
+не время, а конкретный последний semantic-переход. Его стабильные состояния
+подходят для автоматизаций и локализуются в UI, например:
+
+```text
+bpla_started       Начало угрозы БПЛА
+bpla_ended         Отбой угрозы БПЛА
+rocket_started     Начало ракетной угрозы
+rocket_ended       Отбой ракетной угрозы
+pvo_started        Зафиксирована работа ПВО
+```
+
+В атрибутах доступны `alert_type`, `state`, `transition`, `event_timestamp`,
+`api_last_event_ts`, `object_type`, `object_id`, `name`, `region`, `source_text`
+и `sources`. Событие определяется только по реальному переходу boolean-флага и
+не извлекается из текста сообщения. Последнее значение восстанавливается после
+перезапуска Home Assistant.
+
 `fill`, `bplaDim`, `uabDim`, `bplaLaunchAnim`, `rocketOnRegion` и прочие
 presentation/animation fields не экспортируются как сущности.
 
@@ -96,6 +114,8 @@ presentation/animation fields не экспортируются как сущн�
   активен хотя бы у одного выбранного объекта;
 - **Connection / Подключение** (`device_class: connectivity`) — включён, если
   последний запрос RadarMap успешен, и выключен при ошибке API или сети.
+- **Last event / Последнее событие** — последний semantic-переход среди всех
+  выбранных объектов с указанием конкретного объекта в атрибутах.
 
 Атрибуты итоговой тревоги:
 
@@ -275,8 +295,8 @@ ruff format --check .
 3. проверьте и опубликуйте релиз с префиксом `v`, например:
 
 ```bash
-python scripts/check_version.py v1.2.0
-gh release create v1.2.0 --target master --generate-notes
+python scripts/check_version.py v1.3.0
+gh release create v1.3.0 --target master --generate-notes
 ```
 
 Скрипт проверяет строгий формат SemVer и совпадение тега с версией manifest.
